@@ -1,0 +1,22 @@
+{
+  "name": "threads-app",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node build/index.js",
+    "dev": "tsc-watch --onSuccess \"npm start\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@apollo/server": "^5.0.0",
+    "@as-integrations/express5": "^1.1.2",
+    "@types/express": "^5.0.3",
+    "express": "^5.1.0",
+    "graphql": "^16.11.0",
+    "tsc-watch": "^7.1.1",
+    "typescript": "^5.8.3"
+  }
+}
