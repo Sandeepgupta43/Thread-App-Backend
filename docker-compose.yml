@@ -1,17 +1,18 @@
 version: '3.4'
 
 services:
-  postgres:
-    container_name: threads-db
-    image: postgres
+  mysql:
+    container_name: threads-mysql
+    image: mysql:8.0
     ports:
-      - 5432:5432
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - "3306:3306"
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_DB: threads
-      POSTGRES_PASSWORD: threads
+      MYSQL_ROOT_PASSWORD: threads
+      MYSQL_DATABASE: threads
+      MYSQL_USER: threads
+      MYSQL_PASSWORD: threads
+    volumes:
+      - mysql_data:/var/lib/mysql
 
 volumes:
-  postgres_data:
+  mysql_data:
