@@ -1,9 +1,8 @@
 import express from "express";
-import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
 import { sequelize } from "./lib/db";
-import { User } from "./Model/User";
-import 'dotenv/config';
+import createApolloGraphQLServer from "./graphql/index";
+import "dotenv/config";
 
 async function inti() {
     const app = express();
@@ -18,59 +17,13 @@ async function inti() {
 
     // Create the apollo server
 
-    const gqlServer = new ApolloServer({
-        typeDefs: `
-            type Query {
-                hello:String
-                say(name:String):String
-            }
-            type Mutation {
-                createUser(firstName: String!, lastName: String!, email: String!, password: String!): Boolean
-            }
-        `,
-        resolvers: {
-            Query: {
-                hello: () => "hello from graphQL ",
-                say: (_, { name }: { name: string }) => `Hey ${name}`,
-            },
-            Mutation: {
-                createUser: async (
-                    _,
-                    {
-                        firstName,
-                        lastName,
-                        email,
-                        password,
-                    }: {
-                        firstName: String;
-                        lastName: String;
-                        email: string;
-                        password: string;
-                    }
-                ) => {
-                    await User.create({
-                        email,
-                        firstName,
-                        lastName,
-                        password,
-                        salt: "random_salt",
-                    });
-                    return true;
-                },
-            },
-        },
-    });
-
-    //start the apollo server
-    await gqlServer.start();
-
     app.get("/", (req, res) => {
         res.json({
             message: "hello",
         });
     });
 
-    app.use("/graphql", expressMiddleware(gqlServer));
+    app.use("/graphql", expressMiddleware(await createApolloGraphQLServer()));
     app.listen(PORT, () => {
         console.log(`Server is running on port: ${PORT}`);
     });
