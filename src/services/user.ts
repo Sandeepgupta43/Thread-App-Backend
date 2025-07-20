@@ -15,13 +15,15 @@ export interface GetUserToken {
     email: string;
     password: string;
 }
+const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || "default";
+
 
 class UserService {
     public static async createUser(payload: CreateUserPayload) {
         const { firstName, lastName, email, password } = payload;
 
-        // Basic validations
-        if (!firstName || firstName.trim().length === 0) {
+        // Validations
+        if (!firstName?.trim()) {
             throw new Error("First name is required.");
         }
 
@@ -33,24 +35,24 @@ class UserService {
             throw new Error("Password must be at least 6 characters long.");
         }
 
-        // Check for existing user
         const existingUser = await User.findOne({ where: { email } });
         if (existingUser) {
             throw new Error("Email already in use.");
         }
 
-        // Hashing password
+        // Hash password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // Create user
-        return User.create({
+        const newUser = await User.create({
             firstName,
             lastName,
             email,
             password: hashedPassword,
             salt,
         });
+
+        return newUser.toJSON(); // Optional: strips off metadata
     }
 
     public static async getUserToken(payload: GetUserToken) {
@@ -64,27 +66,47 @@ class UserService {
             throw new Error("Password must be at least 6 characters long.");
         }
 
-        // Check for existing user
         const existingUser = await User.findOne({ where: { email } });
-        if (!existingUser?.dataValues) {
-            throw new Error("Invailed Email");
+        if (!existingUser) {
+            throw new Error("Invalid Email.");
         }
-        const user = existingUser?.dataValues;
 
-        const userSalt = user.salt;
-        const hashedPassword = await bcrypt.hash(password, userSalt);
+        const user = existingUser.get(); // Type-safe way to access fields
 
-        if (user.password !== hashedPassword) {
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
             throw new Error("Incorrect Password");
         }
 
-        const JWT_SERCET_KEY = process.env.JWT_SERCET_KEY || "default";
+        // const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || "default";
         const token = jwt.sign(
             { id: user.id, email: user.email },
-            JWT_SERCET_KEY
+            JWT_SECRET_KEY,
+            { expiresIn: "7d" }
         );
 
         return token;
+    }
+
+    public static async getUserById(id: number) {
+        try {
+            const res = await User.findOne({where: {id}});
+            
+            const user = res?.get();
+            return user;
+        } catch (error) {
+            throw new Error("Invalid Id or not found");
+        }
+    }
+
+    public static async decodeToken(token: string) {
+        // const JWT_SECRET_KEY = process.env.JWT_SECRET_KEY || "default";
+        try {
+            const decoded = jwt.verify(token, JWT_SECRET_KEY);
+            return decoded;
+        } catch (err) {
+            throw new Error("Invalid or expired token");
+        }
     }
 }
 
